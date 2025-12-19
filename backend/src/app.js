@@ -37,6 +37,7 @@ app.use((req, res, next) => {
 
 // Importer les routes
 const authRoutes = require('./routes/authRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 
 // Route de test pour vérifier que le serveur fonctionne
 app.get('/', (req, res) => {
@@ -58,6 +59,9 @@ app.get('/api/health', (req, res) => {
 
 // Routes d'authentification
 app.use('/api/auth', authRoutes);
+
+// Routes des projets
+app.use('/api/projects', projectRoutes);
 
 /**
  * GESTION DES ERREURS
