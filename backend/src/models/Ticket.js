@@ -154,9 +154,9 @@ ticketSchema.methods.getDaysUntilDeadline = function() {
 
 /**
  * PRE-SAVE MIDDLEWARE
- * Update status-related dates
+ * Mise à jour des dates liées au statut
  */
-ticketSchema.pre('save', function(next) {
+ticketSchema.pre('save', async function() {
   // If status changed to 'inprogress' and startedAt is not set
   if (this.isModified('status')) {
     if (this.status === 'inprogress' && !this.startedAt) {
@@ -174,23 +174,21 @@ ticketSchema.pre('save', function(next) {
     }
   }
   
-  next();
 });
 
 /**
- * PRE-REMOVE MIDDLEWARE
+ * PRE-DELETE MIDDLEWARE
  * Clean up related data when ticket is deleted
  */
-ticketSchema.pre('remove', async function(next) {
+ticketSchema.pre('deleteOne', { document: true, query: false }, async function() {
   try {
     // Delete all comments associated with this ticket if Comment model exists
     if (mongoose.models.Comment) {
       await mongoose.model('Comment').deleteMany({ ticketId: this._id });
     }
     
-    next();
   } catch (error) {
-    next(error);
+    throw(error);
   }
 });
 
@@ -227,10 +225,10 @@ ticketSchema.post('save', async function() {
 });
 
 /**
- * POST-REMOVE MIDDLEWARE
+ * POST-DELETE MIDDLEWARE
  * Update project statistics after deletion
  */
-ticketSchema.post('remove', async function() {
+ticketSchema.post('deleteOne', { document: true, query: false }, async function() {
   try {
     const Project = mongoose.model('Project');
     const project = await Project.findById(this.projectId);

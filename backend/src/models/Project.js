@@ -164,8 +164,12 @@ projectSchema.methods.canManage = function(userId) {
  * PRE-SAVE MIDDLEWARE
  * Met à jour le compteur de membres actifs
  */
-projectSchema.pre('save', function(next) {
-  // Calculate unique members count
+projectSchema.pre('save', function() {
+  // On s'assure que admins et members sont des tableaux (sécurité)
+  const admins = this.admins || [];
+  const members = this.members || [];
+
+  // Calcul du nombre de membres uniques
   const uniqueMembers = new Set([
     this.owner.toString(),
     ...this.admins.map(id => id.toString()),
@@ -173,31 +177,34 @@ projectSchema.pre('save', function(next) {
   ]);
   
   this.stats.activeMembers = uniqueMembers.size;
-  next();
 });
 
 /**
  * PRE-REMOVE MIDDLEWARE
  * Clean up related data when project is deleted
  */
-projectSchema.pre('remove', async function(next) {
+projectSchema.pre('deleteOne', { document: true, query: false }, async function() {
   try {
-    // Check if Ticket model exists before trying to delete
-    if (mongoose.models.Ticket) {
-      // Delete all tickets associated with this project
-      await mongoose.model('Ticket').deleteMany({ projectId: this._id });
-      
-      // Delete all comments on tickets of this project if Comment model exists
-      if (mongoose.models.Comment) {
-        const tickets = await mongoose.model('Ticket').find({ projectId: this._id });
-        const ticketIds = tickets.map(t => t._id);
-        await mongoose.model('Comment').deleteMany({ ticketId: { $in: ticketIds } });
-      }
-    }
+    console.log(`🧹 Nettoyage des données pour le projet: ${this._id}`);
     
-    next();
+    const Ticket = mongoose.model('Ticket');
+    const Comment = mongoose.model('Comment');
+
+    // 1. Trouver tous les tickets du projet
+    const tickets = await Ticket.find({ projectId: this._id });
+    const ticketIds = tickets.map(t => t._id);
+
+    // 2. Supprimer les commentaires liés à ces tickets
+    if (ticketIds.length > 0) {
+      await Comment.deleteMany({ ticketId: { $in: ticketIds } });
+    }
+
+    // 3. Supprimer les tickets
+    await Ticket.deleteMany({ projectId: this._id });
+
   } catch (error) {
-    next(error);
+    // Si c'est async, on lance l'erreur normalement pour que Mongoose la capture
+    throw error;
   }
 });
 

@@ -38,6 +38,7 @@ app.use((req, res, next) => {
 // Importer les routes
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 
 // Route de test pour vérifier que le serveur fonctionne
 app.get('/', (req, res) => {
@@ -62,6 +63,9 @@ app.use('/api/auth', authRoutes);
 
 // Routes des projets
 app.use('/api/projects', projectRoutes);
+
+// Routes des tickets
+app.use('/api/tickets', ticketRoutes);
 
 /**
  * GESTION DES ERREURS
