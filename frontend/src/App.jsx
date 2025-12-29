@@ -7,6 +7,7 @@ import useAuthStore from './store/authStore';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import ProjectsPage from './pages/ProjectsPage';
 
 // Configuration React Query
 const queryClient = new QueryClient({
@@ -82,6 +83,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/projects" 
+            element={
+              <ProtectedRoute>
+                <ProjectsPage />
               </ProtectedRoute>
             } 
           />
