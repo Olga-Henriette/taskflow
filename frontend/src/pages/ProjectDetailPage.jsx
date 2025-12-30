@@ -47,11 +47,27 @@ const ProjectDetailPage = () => {
     },
   });
   
+  // Mutation pour mettre à jour le statut d'un ticket (drag & drop)
+  const updateTicketStatusMutation = useMutation({
+    mutationFn: ({ ticketId, status }) => ticketApi.updateTicket(ticketId, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tickets', projectId]);
+      queryClient.invalidateQueries(['project', projectId]);
+    },
+  });
+  
   /**
    * Gérer la création d'un ticket
    */
   const handleCreateTicket = (data) => {
     createTicketMutation.mutate(data);
+  };
+  
+  /**
+   * Gérer le changement de statut d'un ticket (drag & drop)
+   */
+  const handleStatusChange = (ticketId, newStatus) => {
+    updateTicketStatusMutation.mutate({ ticketId, status: newStatus });
   };
   
   /**
@@ -192,6 +208,7 @@ const ProjectDetailPage = () => {
           tickets={tickets}
           onTicketClick={handleTicketClick}
           onCreateTicket={() => setIsCreateTicketModalOpen(true)}
+          onStatusChange={handleStatusChange}
         />
       )}
       
