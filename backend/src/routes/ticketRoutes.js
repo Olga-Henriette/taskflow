@@ -107,9 +107,9 @@ router.use(authMiddleware);
  * ROUTES CRUD TICKETS
  */
 
-// GET /api/tickets/projects/:projectId - Récupérer tous les tickets d'un projet
+// GET /api/tickets/projects/:projectId/tickets - Récupérer tous les tickets d'un projet
 router.get(
-  '/projects/:projectId',
+  '/projects/:projectId/tickets',
   [param('projectId').isMongoId().withMessage('ID projet invalide')],
   validate,
   ticketController.getProjectTickets
@@ -123,9 +123,9 @@ router.get(
   ticketController.getTicketById
 );
 
-// POST /api/tickets/projects/:projectId - Créer un nouveau ticket
+// POST /api/tickets/projects/:projectId/tickets  - Créer un nouveau ticket
 router.post(
-  '/projects/:projectId',
+  '/projects/:projectId/tickets',
   createTicketValidation,
   validate,
   ticketController.createTicket
