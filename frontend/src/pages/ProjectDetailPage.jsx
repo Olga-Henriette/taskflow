@@ -4,8 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Users, Settings, Plus } from 'lucide-react';
 import * as projectApi from '../api/projectApi';
 import * as ticketApi from '../api/ticketApi';
+import useToast from '../hooks/useToast';
 import MainLayout from '../components/layout/MainLayout';
 import Button from '../components/common/Button';
+import ManageMembersModal from '../components/projects/ManageMembersModal';
+import TicketFilters from '../components/tickets/TicketFilters';
 import Modal from '../components/common/Modal';
 import KanbanBoard from '../components/tickets/KanbanBoard';
 import TicketForm from '../components/tickets/TicketForm';
@@ -18,10 +21,13 @@ const ProjectDetailPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [filters, setFilters] = useState({ search: '', priority: '', assignee: '' });
+
   // Récupérer le projet
   const { data: projectData, isLoading: isLoadingProject } = useQuery({
     queryKey: ['project', projectId],
@@ -33,8 +39,8 @@ const ProjectDetailPage = () => {
   // Récupérer les tickets du projet
   const { data: ticketsData, isLoading: isLoadingTickets } = useQuery({
     queryKey: ['tickets', projectId],
-    queryFn: () => ticketApi.getProjectTickets(projectId),
-    enabled: !!projectId,
+    queryFn: () => ticketApi.getProjectTickets(projectId, filters),
+    enabled: !!projectId, refetchOnMount: true,
   });
   
   const tickets = ticketsData?.data || [];
@@ -42,6 +48,7 @@ const ProjectDetailPage = () => {
   const createTicketMutation = useMutation({
     mutationFn: (data) => ticketApi.createTicket(projectId, data),
     onSuccess: () => {
+      toast.success('Ticket créé avec succès !');
       queryClient.invalidateQueries(['tickets', projectId]);
       queryClient.invalidateQueries(['project', projectId]);
       setIsCreateTicketModalOpen(false);
@@ -58,6 +65,7 @@ const ProjectDetailPage = () => {
       // Sauvegarder l'état précédent
       const previousTickets = queryClient.getQueryData(['tickets', projectId]);
       
+      toast.success('Statut mis à jour !');
       // Mettre à jour optimistiquement (instantané)
       queryClient.setQueryData(['tickets', projectId], (old) => {
         if (!old?.data) return old;
@@ -185,6 +193,13 @@ const ProjectDetailPage = () => {
                 /{project.stats.totalTickets} tickets terminés
               </div>
             </div>
+
+            {/* Filtres */}
+            <TicketFilters
+              filters={filters}
+              onFilterChange={setFilters}
+              onClearFilters={() => setFilters({ search: '', priority: '', assignee: '' })}
+            />
           </div>
           
           {/* Actions */}
@@ -192,7 +207,7 @@ const ProjectDetailPage = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {}}
+              onClick={() => setIsMembersModalOpen(true)}
             >
               <Users className="w-4 h-4 mr-2" />
               Membres
@@ -227,7 +242,13 @@ const ProjectDetailPage = () => {
         </div>
       ) : (
         <KanbanBoard
-          tickets={tickets}
+          tickets={tickets.filter(ticket => {
+            const matchSearch = !filters.search || 
+              ticket.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+              ticket.description?.toLowerCase().includes(filters.search.toLowerCase());
+            const matchPriority = !filters.priority || ticket.priority === filters.priority;
+            return matchSearch && matchPriority;
+          })}
           onTicketClick={handleTicketClick}
           onCreateTicket={() => setIsCreateTicketModalOpen(true)}
           onStatusChange={handleStatusChange}
@@ -262,6 +283,13 @@ const ProjectDetailPage = () => {
         }}
         ticket={selectedTicket}
         projectId={projectId}
+      />
+
+      {/* Modal Gérer Membres */}
+      <ManageMembersModal
+        isOpen={isMembersModalOpen}
+        onClose={() => setIsMembersModalOpen(false)}
+        project={project}
       />
     </MainLayout>
   );

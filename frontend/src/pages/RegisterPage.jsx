@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import useAuthStore from '../store/authStore';
+import useToast from '../hooks/useToast';
 import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
@@ -52,6 +53,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { register: registerUser, isLoading } = useAuthStore();
   const [serverError, setServerError] = useState('');
+  const toast = useToast();
   
   // Configuration du formulaire avec React Hook Form
   const {
@@ -74,10 +76,12 @@ const RegisterPage = () => {
     const result = await registerUser(userData);
     
     if (result.success) {
+      toast.success('Compte créé avec succès ! 🎉');
       navigate('/dashboard');
     } else {
       // Afficher l'erreur
       setServerError(result.error);
+      toast.error(result.error);
     }
   };
   

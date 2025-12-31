@@ -10,6 +10,7 @@ import Modal from '../components/common/Modal';
 import ProjectForm from '../components/projects/ProjectForm';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import useToast from '../hooks/useToast';
 
 /**
  * Liste tous les projets de l'utilisateur
@@ -17,7 +18,10 @@ import { fr } from 'date-fns/locale';
 const ProjectsPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   
   // Récupérer les projets
@@ -32,6 +36,7 @@ const ProjectsPage = () => {
   const createMutation = useMutation({
     mutationFn: projectApi.createProject,
     onSuccess: () => {
+      toast.success('Projet créé avec succès !');
       queryClient.invalidateQueries(['projects']);
       setIsCreateModalOpen(false);
     },
@@ -41,10 +46,26 @@ const ProjectsPage = () => {
   const deleteMutation = useMutation({
     mutationFn: projectApi.deleteProject,
     onSuccess: () => {
+      toast.success('Projet supprimé !');
       queryClient.invalidateQueries(['projects']);
     },
   });
   
+  // Mutation pour mettre à jour un projet
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => projectApi.updateProject(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['projects']);
+      setIsEditModalOpen(false);
+      setSelectedProject(null);
+      toast.success('Projet modifié avec succès !');
+    },
+  });
+
+  const handleUpdateProject = (data) => {
+    updateMutation.mutate({ id: selectedProject._id, data });
+  };
+
   /**
    * Gérer la création d'un projet
    */
@@ -139,16 +160,52 @@ const ProjectsPage = () => {
                 
                 {/* Menu actions */}
                 {project.userRole === 'owner' && (
-                  <div className="relative">
+                  <div className="relative group/menu">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Toggle menu
+                        // Toggle menu pour ce projet spécifique
+                        setMenuOpenId(menuOpenId === project._id ? null : project._id);
                       }}
                       className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <MoreVertical className="w-4 h-4 text-gray-500" />
                     </button>
+                    
+                    {/* Menu déroulant */}
+                    {menuOpenId === project._id && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-10" 
+                          onClick={() => setMenuOpenId(null)}
+                        ></div>
+                        <div className="absolute right-0 top-10 z-20 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProject(project);
+                              setIsEditModalOpen(true);
+                              setMenuOpenId(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            Modifier
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project._id);
+                              setMenuOpenId(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Supprimer
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -188,6 +245,26 @@ const ProjectsPage = () => {
           onSubmit={handleCreateProject}
           onCancel={() => setIsCreateModalOpen(false)}
           isLoading={createMutation.isPending}
+        />
+      </Modal>
+
+      {/* Modal Modifier Projet */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedProject(null);
+        }}
+        title="Modifier le projet"
+      >
+        <ProjectForm
+          onSubmit={handleUpdateProject}
+          onCancel={() => {
+            setIsEditModalOpen(false);
+            setSelectedProject(null);
+          }}
+          defaultValues={selectedProject}
+          isLoading={updateMutation.isPending}
         />
       </Modal>
     </MainLayout>

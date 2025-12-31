@@ -114,21 +114,32 @@ projectSchema.virtual('allMembers').get(function() {
  * METHOD: Check if user is owner
  */
 projectSchema.methods.isOwner = function(userId) {
-  return this.owner.toString() === userId.toString();
+  if (!userId) return false;
+  // On récupère l'ID que le champ soit populé ou non
+  const ownerId = this.owner._id ? this.owner._id : this.owner;
+  return ownerId.toString() === userId.toString();
 };
 
 /**
  * METHOD: Check if user is admin
  */
 projectSchema.methods.isAdmin = function(userId) {
-  return this.admins.some(adminId => adminId.toString() === userId.toString());
+  if (!userId) return false;
+  return this.admins.some(admin => {
+    const adminId = admin._id ? admin._id : admin;
+    return adminId.toString() === userId.toString();
+  });
 };
 
 /**
  * METHOD: Check if user is member
  */
 projectSchema.methods.isMember = function(userId) {
-  return this.members.some(memberId => memberId.toString() === userId.toString());
+  if (!userId) return false;
+  return this.members.some(member => {
+    const memberId = member._id ? member._id : member;
+    return memberId.toString() === userId.toString();
+  });
 };
 
 /**

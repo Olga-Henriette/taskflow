@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import * as ticketApi from '../../api/ticketApi';
 import * as commentApi from '../../api/commentApi';
+import useToast from '../../hooks/useToast';
 import Button from '../common/Button';
 import Modal from '../common/Modal';
 import TicketForm from './TicketForm';
@@ -16,6 +17,7 @@ const TicketDetailModal = ({ isOpen, onClose, ticket, projectId }) => {
   const queryClient = useQueryClient();
   const [isEditMode, setIsEditMode] = useState(false);
   const [newComment, setNewComment] = useState('');
+  const toast = useToast();
   
   // Récupérer les commentaires du ticket
   const { data: commentsData } = useQuery({
@@ -30,6 +32,7 @@ const TicketDetailModal = ({ isOpen, onClose, ticket, projectId }) => {
   const updateMutation = useMutation({
     mutationFn: (data) => ticketApi.updateTicket(ticket._id, data),
     onSuccess: (updatedTicket) => {
+      toast.success('Ticket mis à jour !');
       queryClient.invalidateQueries(['tickets', projectId]);
       queryClient.setQueryData(['ticket', ticket._id], updatedTicket.data);
       setIsEditMode(false);
@@ -42,6 +45,7 @@ const TicketDetailModal = ({ isOpen, onClose, ticket, projectId }) => {
   const deleteMutation = useMutation({
     mutationFn: () => ticketApi.deleteTicket(ticket._id),
     onSuccess: () => {
+      toast.success('Ticket supprimé !');
       queryClient.invalidateQueries(['tickets', projectId]);
       onClose();
     },
@@ -82,6 +86,7 @@ const TicketDetailModal = ({ isOpen, onClose, ticket, projectId }) => {
       alert(err.message || "Impossible d'ajouter le commentaire");
     },
     onSettled: () => {
+      toast.success('Commentaire ajouté !')
       queryClient.invalidateQueries(['comments', ticket._id]);
     },
   });
@@ -89,6 +94,7 @@ const TicketDetailModal = ({ isOpen, onClose, ticket, projectId }) => {
   const deleteCommentMutation = useMutation({
     mutationFn: (commentId) => commentApi.deleteComment(commentId),
     onSuccess: () => {
+      toast.success('Commentaire supprimé !');
       queryClient.invalidateQueries(['comments', ticket._id]);
       queryClient.invalidateQueries(['tickets', projectId]);
     },

@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const userRoutes = require('./routes/userRoutes');
 
 // Charger les variables d'environnement
 dotenv.config();
@@ -21,6 +22,8 @@ app.use(cors({
 
 // 2. Parser JSON - Permet de lire les données JSON envoyées par le client
 app.use(express.json());
+
+app.use('/api/users', userRoutes);
 
 // 3. Parser URL-encoded - Permet de lire les données de formulaires
 app.use(express.urlencoded({ extended: true }));

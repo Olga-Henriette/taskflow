@@ -1,7 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import ToastProvider from './components/common/ToastProvider';
 import useAuthStore from './store/authStore';
+import SettingsPage from './pages/SettingsPage';
+import TeamPage from './pages/TeamPage';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -55,6 +58,7 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <ToastProvider />
       <BrowserRouter>
         <Routes>
           {/* Route par défaut */}
@@ -103,7 +107,25 @@ function App() {
               </ProtectedRoute>
             } 
           />
-          
+
+          {/* Routes pour les paramètres et l'équipe */}
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/team" 
+            element={
+              <ProtectedRoute>
+                <TeamPage />
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Route 404 */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

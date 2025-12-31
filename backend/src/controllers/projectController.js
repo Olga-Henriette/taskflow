@@ -11,7 +11,6 @@ exports.getAllProjects = async (req, res) => {
     const userId = req.user._id;
     const { status, search, page = 1, limit = 10 } = req.query;
     
-    // Construction de la requête (Recherche où l'utilisateur est proprio, admin ou membre)
     const query = {
       $or: [
         { owner: userId },
@@ -20,20 +19,16 @@ exports.getAllProjects = async (req, res) => {
       ]
     };
     
-    // Filtrage par statut
     if (status && ['active', 'inactive', 'archived'].includes(status)) {
       query.status = status;
     }
     
-    // Recherche textuelle (nom ou description)
     if (search) {
       query.$text = { $search: search };
     }
     
-    // Calculate pagination
     const skip = (page - 1) * limit;
     
-    // Exécution de la requête avec population des données utilisateurs
     const projects = await Project.find(query)
       .populate('owner', 'firstName lastName email avatar')
       .populate('admins', 'firstName lastName email avatar')
@@ -41,13 +36,19 @@ exports.getAllProjects = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
+
+    // On ajoute le rôle de l'utilisateur pour chaque projet
+    const projectsWithRole = projects.map(project => {
+      const projectObj = project.toJSON();
+      projectObj.userRole = project.getUserRole(userId); 
+      return projectObj;
+    });
     
-    // Compte total pour la pagination côté front-end
     const total = await Project.countDocuments(query);
     
     res.status(200).json({
       success: true,
-      data: projects,
+      data: projectsWithRole, 
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),

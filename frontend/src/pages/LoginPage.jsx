@@ -9,6 +9,7 @@ import Button from '../components/common/Button';
 import Input from '../components/common/Input';
 import Card from '../components/common/Card';
 import Logo from '../components/common/Logo';
+import useToast from '../hooks/useToast';
 
 /**
  * SCHÉMA DE VALIDATION
@@ -31,6 +32,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login, isLoading } = useAuthStore();
   const [serverError, setServerError] = useState('');
+  const toast = useToast();
   
   // Configuration du formulaire avec React Hook Form
   const {
@@ -50,10 +52,12 @@ const LoginPage = () => {
     const result = await login(data);
     
     if (result.success) {
+      toast.success('Connexion réussie ! Bienvenue 👋');
       navigate('/dashboard');
     } else {
       // Afficher l'erreur
       setServerError(result.error);
+      toast.error(result.error);
     }
   };
   
