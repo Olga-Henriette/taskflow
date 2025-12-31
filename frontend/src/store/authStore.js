@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import * as authApi from '../api/authApi';
 
 /**
- * STORE D'AUTHENTIFICATION
  * Gère l'état global de l'authentification avec Zustand
  */
 const useAuthStore = create((set) => ({
@@ -47,15 +46,19 @@ const useAuthStore = create((set) => ({
     
     try {
       const response = await authApi.login(credentials);
-      
+      const { user, accessToken, refreshToken } = response.data;
+
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+
       set({
-        user: response.data.user,
+        user,
         isAuthenticated: true,
         isLoading: false,
-        error: null,
       });
       
-      return { success: true, data: response.data };
+      return { success: true};
     } catch (error) {
       set({
         isLoading: false,

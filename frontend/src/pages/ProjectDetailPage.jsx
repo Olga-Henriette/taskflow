@@ -9,6 +9,7 @@ import Button from '../components/common/Button';
 import Modal from '../components/common/Modal';
 import KanbanBoard from '../components/tickets/KanbanBoard';
 import TicketForm from '../components/tickets/TicketForm';
+import TicketDetailModal from '../components/tickets/TicketDetailModal';
 
 /**
  * Affiche les détails d'un projet et ses tickets en vue Kanban
@@ -19,6 +20,7 @@ const ProjectDetailPage = () => {
   const queryClient = useQueryClient();
   const [isCreateTicketModalOpen, setIsCreateTicketModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
   // Récupérer le projet
   const { data: projectData, isLoading: isLoadingProject } = useQuery({
@@ -37,7 +39,6 @@ const ProjectDetailPage = () => {
   
   const tickets = ticketsData?.data || [];
   
-  // Mutation pour créer un ticket
   const createTicketMutation = useMutation({
     mutationFn: (data) => ticketApi.createTicket(projectId, data),
     onSuccess: () => {
@@ -50,15 +51,38 @@ const ProjectDetailPage = () => {
   // Mutation pour mettre à jour le statut d'un ticket (drag & drop)
   const updateTicketStatusMutation = useMutation({
     mutationFn: ({ ticketId, status }) => ticketApi.updateTicket(ticketId, { status }),
-    onSuccess: () => {
+    onMutate: async ({ ticketId, status }) => {
+      // Annuler les refetch en cours
+      await queryClient.cancelQueries(['tickets', projectId]);
+      
+      // Sauvegarder l'état précédent
+      const previousTickets = queryClient.getQueryData(['tickets', projectId]);
+      
+      // Mettre à jour optimistiquement (instantané)
+      queryClient.setQueryData(['tickets', projectId], (old) => {
+        if (!old?.data) return old;
+        return {
+          ...old,
+          data: old.data.map(ticket =>
+            ticket._id === ticketId ? { ...ticket, status } : ticket
+          )
+        };
+      });
+      
+      return { previousTickets };
+    },
+    onError: (err, variables, context) => {
+      // Rollback en cas d'erreur
+      if (context?.previousTickets) {
+        queryClient.setQueryData(['tickets', projectId], context.previousTickets);
+      }
+    },
+    onSettled: () => {
+      // Refetch silencieusement en arrière-plan
       queryClient.invalidateQueries(['tickets', projectId]);
-      queryClient.invalidateQueries(['project', projectId]);
     },
   });
-  
-  /**
-   * Gérer la création d'un ticket
-   */
+    
   const handleCreateTicket = (data) => {
     createTicketMutation.mutate(data);
   };
@@ -70,11 +94,9 @@ const ProjectDetailPage = () => {
     updateTicketStatusMutation.mutate({ ticketId, status: newStatus });
   };
   
-  /**
-   * Gérer le clic sur un ticket
-   */
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
+    setIsDetailModalOpen(true);
   };
   
   /**
@@ -230,6 +252,17 @@ const ProjectDetailPage = () => {
           ]}
         />
       </Modal>
+      
+      {/* Modal Détails Ticket */}
+      <TicketDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedTicket(null);
+        }}
+        ticket={selectedTicket}
+        projectId={projectId}
+      />
     </MainLayout>
   );
 };

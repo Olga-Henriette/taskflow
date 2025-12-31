@@ -61,7 +61,7 @@ const Modal = ({
         </div>
         
         {/* Contenu */}
-        <div className="p-6">
+        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {children}
         </div>
       </div>

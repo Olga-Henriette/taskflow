@@ -77,7 +77,7 @@ const TicketForm = ({
   };
   
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
       {/* Titre */}
       <Input
         label="Titre du ticket"

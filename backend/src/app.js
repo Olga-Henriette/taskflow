@@ -15,7 +15,7 @@ const app = express();
 
 // 1. CORS - Permet au frontend de communiquer avec le backend
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true // Permet d'envoyer des cookies
 }));
 
@@ -39,6 +39,7 @@ app.use((req, res, next) => {
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
+const commentRoutes = require('./routes/commentRoutes');
 
 // Route de test pour vérifier que le serveur fonctionne
 app.get('/', (req, res) => {
@@ -66,6 +67,7 @@ app.use('/api/projects', projectRoutes);
 
 // Routes des tickets
 app.use('/api/tickets', ticketRoutes);
+app.use('/api/comments', commentRoutes);
 
 /**
  * GESTION DES ERREURS
